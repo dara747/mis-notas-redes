@@ -12,5 +12,4 @@ El modelo OSI describe cómo viajan los datos a través de una red dividiendo el
 3. **Red:** Direccionamiento lógico e itinerario (Direcciones IP y Routers).
 2. **Enlace de Datos:** Direccionamiento físico (Direcciones MAC y Switches).
 1. **Física:** Transmisión de señales por cables, Wi-Fi o impulsos.
-
    
