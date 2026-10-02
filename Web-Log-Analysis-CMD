@@ -1,0 +1,74 @@
+Web Server Log Analysis & Incident Response (Windows CLI)
+📌 Overview
+This project demonstrates an incident response procedure using native Windows Command Line utilities (CMD) to analyze web server logs (access.log). The primary objective was to investigate suspicious traffic, identify potential attack vectors (SQL Injection and Brute-Force login attempts), isolate malicious entries, and package digital evidence for forensic auditing.
+🛠️ Tools & Technologies
+OS Environment: Windows Command Prompt (CMD)
+Log Parsing: findstr, type
+Evidence Archiving: tar (Gzip compression)
+Data Handling: Output redirection (>, ())
+🔍 Incident Scenario
+A client reported unauthorized access attempts and potential application errors on their web server. The security team was tasked with examining the HTTP access log (access_web.log) to answer three key investigation questions:
+Were there any SQL Injection (SQLi) attack attempts?
+Which IP address attempted a Brute-Force attack against the administrative login panel?
+Can the relevant evidence be packaged securely for senior auditors?
+📝 Step-by-Step Execution
+Step 1: Environment Setup & Log Simulation
+Simulated the web server access log using Windows CMD text piping to generate sample HTTP request records:
+(
+echo 192.168.1.10 - - [30/Sep/2026:10:00:01] "GET /index.html HTTP/1.1" 200 1420
+echo 45.33.32.156 - - [30/Sep/2026:10:01:12] "GET /admin/login.php HTTP/1.1" 401 512
+echo 45.33.32.156 - - [30/Sep/2026:10:01:15] "POST /admin/login.php HTTP/1.1" 401 512
+echo 45.33.32.156 - - [30/Sep/2026:10:01:20] "POST /admin/login.php HTTP/1.1" 200 4200
+echo 192.168.1.15 - - [30/Sep/2026:10:02:00] "GET /products.php?id=1' UNION SELECT NULL-- HTTP/1.1" 500 230
+echo 45.33.32.156 - - [30/Sep/2026:10:03:45] "GET /admin/dashboard.php HTTP/1.1" 200 8900
+) > access_web.log
+
+
+Step 2: SQL Injection Identification
+Filtered the log file for common SQL Injection keywords (UNION):
+findstr "UNION" access_web.log
+
+
+Output:
+192.168.1.15 - - [30/Sep/2026:10:02:00] "GET /products.php?id=1' UNION SELECT NULL-- HTTP/1.1" 500 230
+
+
+Finding: IP 192.168.1.15 attempted an inline SQL Injection attack on the id parameter, resulting in an HTTP 500 (Internal Server Error) code.
+Step 3: Brute-Force & Unauthorized Access Isolation
+Extracted all requests returning HTTP status code 401 (Unauthorized) to isolate failed authentication attempts into a separate report:
+findstr "401" access_web.log > sospechosos.txt
+type sospechosos.txt
+
+
+Output (sospechosos.txt):
+45.33.32.156 - - [30/Sep/2026:10:01:12] "GET /admin/login.php HTTP/1.1" 401 512
+45.33.32.156 - - [30/Sep/2026:10:01:15] "POST /admin/login.php HTTP/1.1" 401 512
+
+
+Finding: IP 45.33.32.156 performed consecutive unauthorized access attempts on /admin/login.php before gaining successful access (HTTP 200).
+Step 4: Evidence Archiving
+Packaged both the original log and the isolated suspicious activity report into a compressed .tar.gz archive for reporting:
+tar -czvf evidencia_incidente.tar.gz access_web.log sospechosos.txt
+
+
+##📊 Key Findings Summary
+Threat Type
+Attacker IP
+Target URL
+HTTP Status
+Action Taken
+Brute-Force / Credential Stuffing
+45.33.32.156
+/admin/login.php
+401 → 200
+Logged in sospechosos.txt
+SQL Injection (SQLi)
+192.168.1.15
+/products.php
+500
+Flagged in security analysis
+
+🛡️ Mitigation Recommendations
+IP Blocking & Rate Limiting: Implement rate limiting on /admin/login.php and temporarily block IP 45.33.32.156.
+Parameterized Queries: Fix the SQLi vulnerability in products.php using prepared statements to prevent SQL commands in URL parameters.
+Multi-Factor Authentication (MFA): Enforce MFA for administrative account access.
