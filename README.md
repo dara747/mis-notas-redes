@@ -1,7 +1,5 @@
 # Mis Notas de Redes - TryHackMe
 
-![Profile Views](https://komarev.com/ghpvc/?username=dara-747&color=blue)
-
 ## Sala: Introductory Networking
 
 ### Módulo 2: El Modelo OSI (7 Capas)
